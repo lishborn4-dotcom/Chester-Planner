@@ -27,6 +27,8 @@ fontFamily: { sans: ['Sarabun', 'sans-serif'] }
 
 <style>
 body { background-color: #f8fafc; color: #1e293b; }
+/* Critical Fix: บังคับซ่อน Element ให้ทำงานแน่นอน 100% */
+.hidden { display: none !important; }
 .card { background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; transition: all 0.2s; }
 .card:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transform: translateY(-2px); }
 .tab-active { background-color: #e11d48; color: white; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3); }
@@ -63,7 +65,7 @@ body { background-color: #f8fafc; color: #1e293b; }
 </div>
 <div class="flex gap-2">
 <span id="file-badge" class="hidden px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200 items-center gap-2"><i class="fa-solid fa-file-csv"></i> <span id="filename-display">File Loaded</span></span>
-<button onclick="location.reload()" class="p-2 text-slate-400 hover:text-brand transition-colors"><i class="fa-solid fa-rotate-right"></i></button>
+<button onclick="location.reload()" class="p-2 text-slate-400 hover:text-brand transition-colors" title="รีเซ็ตโปรแกรม"><i class="fa-solid fa-rotate-right"></i></button>
 </div>
 </div>
 </div>
@@ -464,17 +466,25 @@ processData();
 }
 
 function switchTab(view, btn) {
+// Update buttons
 document.querySelectorAll('.tab-btn').forEach(b => {
-b.className = "px-4 py-2 rounded-full font-medium transition-all tab-inactive flex items-center gap-2 tab-btn text-sm"
+b.className = "px-4 py-2 rounded-full font-medium transition-all tab-inactive flex items-center gap-2 tab-btn text-sm cursor-pointer"
 });
-btn.className = "px-4 py-2 rounded-full font-medium transition-all tab-active flex items-center gap-2 tab-btn text-sm"
-['overview', 'breakdown', 'menu', 'planning', 'order'].forEach(v => {
+// Handle if btn is passed or we need to find it (in case of automatic switching)
+if(btn) {
+btn.className = "px-4 py-2 rounded-full font-medium transition-all tab-active flex items-center gap-2 tab-btn text-sm cursor-pointer"
+}
+// Safe Switching Logic
+const views = ['overview', 'breakdown', 'menu', 'planning', 'order'];
+views.forEach(v => {
 const el = document.getElementById('view-'+v);
+if(el) {
 if(v === view) {
 el.classList.remove('hidden');
 el.classList.add('animate-up');
 } else {
 el.classList.add('hidden');
+}
 }
 });
 }
@@ -502,6 +512,7 @@ let breakdownCut8 = [];
 let breakdownBlock = [];
 
 // Init Hourly keys based on CSV
+if(!rawData.length) return;
 const timeCols = Object.keys(rawData[0]).filter(k => k.includes(':') && !k.includes('Date'));
 timeCols.forEach(t => {
 hourlyPrepData[t] = { bl:0, cut8:0, block:0 };
