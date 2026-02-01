@@ -3,276 +3,478 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chester's Planner </title>
+    <title>Chester's Inventory System</title>
+    
     <!-- Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script>
         tailwind.config = {
             theme: {
-                extend: { colors: { brand: '#e11d48', primary: '#0f172a' }, fontFamily: { sans: ['Sarabun', 'sans-serif'] } }
+                extend: { 
+                    fontFamily: { 
+                        sans: ['Kanit', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif']
+                    },
+                    colors: {
+                        dark: {
+                            900: '#050505',
+                            800: '#101010',
+                            glass: 'rgba(20, 20, 20, 0.7)'
+                        },
+                        chester: {
+                            red: '#E31E24',     
+                            yellow: '#FFC72C',  
+                            orange: '#F58220'
+                        }
+                    },
+                    backgroundImage: {
+                        'brand-gradient': 'linear-gradient(135deg, #E31E24 0%, #FFC72C 100%)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        fadeIn: { from: { opacity: 0, transform: 'translateY(20px)' }, to: { opacity: 1, transform: 'translateY(0)' } }
+                    }
+                }
             }
         }
     </script>
+
     <style>
-        body { background-color: #f1f5f9; color: #1e293b; }
-        .hidden { display: none !important; }
-        .tab-active { background-color: #e11d48; color: white; box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.4); }
-        .tab-inactive { background-color: white; color: #64748b; border: 1px solid #e2e8f0; }
-        .animate-up { animation: fadeInUp 0.4s ease-out forwards; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Simple Range Slider */
+        body { 
+            background-color: #050505; 
+            color: #E2E8F0;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(227, 30, 36, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(255, 199, 44, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(18, 18, 18, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        }
+        
+        .glass-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(227, 30, 36, 0.4);
+            box-shadow: 0 0 30px -5px rgba(227, 30, 36, 0.15);
+            transform: translateY(-4px);
+        }
+
+        /* Typography & Effects */
+        .font-mono-num { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+        .text-glow-red { text-shadow: 0 0 20px rgba(227, 30, 36, 0.5); }
+        .text-glow-yellow { text-shadow: 0 0 20px rgba(255, 199, 44, 0.5); }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #E31E24; }
+
+        /* Range Slider */
         input[type=range] { -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #e11d48; cursor: pointer; margin-top: -6px; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #cbd5e1; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; 
+            background: #E31E24; box-shadow: 0 0 15px rgba(227, 30, 36, 0.8); 
+            cursor: pointer; margin-top: -8px; border: 2px solid white;
+        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
+
+        /* Navigation Tabs */
+        .nav-btn {
+            position: relative; color: #64748b; transition: all 0.3s;
+            font-family: 'Kanit', sans-serif; letter-spacing: 0.05em; font-weight: 500;
+        }
+        .nav-btn:hover { color: white; }
+        .nav-btn.active { color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3); font-weight: 600; }
+        .nav-btn.active::after {
+            content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+            width: 20px; height: 2px; background: #E31E24; box-shadow: 0 0 10px #E31E24;
+        }
+
+        /* Toast */
+        .toast-enter { animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
+<body class="flex flex-col min-h-screen font-sans selection:bg-chester-red selection:text-white">
 
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <div class="bg-brand text-white w-9 h-9 rounded-lg flex items-center justify-center shadow-lg"><i class="fa-solid fa-store"></i></div>
-                <div>
-                    <h1 class="font-bold text-slate-800 leading-none">Chester's <span class="text-brand font-light">Planner </span></h1>
-                    <p class="text-[10px] text-slate-400 leading-none">ระบบคำนวณวัตถุดิบและบรรจุภัณฑ์</p>
-                </div>
+    <!-- Navbar -->
+    <nav class="glass-panel relative z-50 border-b-0 mb-6">
+        <div class="max-w-[1800px] mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <!-- Clean Header -->
+                <h1 class="font-display font-bold text-4xl tracking-wide text-white leading-none">CHESTER'S</h1>
             </div>
-            <button onclick="location.reload()" class="text-slate-400 hover:text-brand"><i class="fa-solid fa-rotate-right"></i></button>
+            
+            <button onclick="location.reload()" class="group flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 transition-all">
+                <span class="text-xs text-slate-500 group-hover:text-white transition-colors">เริ่มใหม่</span>
+                <i class="fa-solid fa-power-off text-slate-600 group-hover:text-chester-red transition-colors"></i>
+            </button>
         </div>
     </nav>
 
-    <main class="flex-grow max-w-7xl mx-auto px-4 py-6 w-full">
-        
-        <!-- Upload Area -->
-        <div id="upload-screen" class="flex flex-col items-center justify-center py-10 animate-up">
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">อัปโหลดไฟล์รายงานขาย</h2>
-            <p class="text-slate-500 mb-6 text-sm">รองรับไฟล์ CSV จากเครื่อง POS (TIS-620)</p>
+    <main class="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 relative">
+
+        <!-- Upload Interface -->
+        <div id="upload-screen" class="min-h-[70vh] flex flex-col items-center justify-center relative">
+            <div class="absolute w-[600px] h-[600px] bg-chester-red/5 rounded-full blur-[120px] -z-10"></div>
             
-            <div class="bg-white p-8 rounded-xl shadow-lg border-2 border-dashed border-slate-300 w-full max-w-md text-center hover:border-brand transition-colors">
+            <div class="glass-panel p-12 rounded-3xl max-w-xl w-full text-center relative animate-fade-in border border-white/10">
+                <h2 class="font-display text-4xl font-bold text-white mb-2 tracking-tight">นำเข้าข้อมูล</h2>
+                <p class="text-slate-400 mb-10 font-light text-sm tracking-wide">อัปโหลดไฟล์ CSV รายงานยอดขายจาก POS</p>
+                
                 <input type="file" id="file-input" accept=".csv" class="hidden" onchange="handleFile(this.files[0])">
-                <button onclick="document.getElementById('file-input').click()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-6 py-4 rounded-lg font-bold transition-colors mb-4 w-full border border-slate-200">
-                    <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2 block text-slate-400"></i>
-                    เลือกไฟล์ CSV
+                
+                <button onclick="document.getElementById('file-input').click()" class="group relative w-full py-4 px-8 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-chester-red/50 transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-chester-red/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                    <div class="relative flex items-center justify-center gap-3">
+                        <span class="font-display font-bold text-lg text-white tracking-widest">เลือกไฟล์ CSV</span>
+                        <i class="fa-solid fa-upload text-chester-red group-hover:text-white transition-colors"></i>
+                    </div>
                 </button>
-                <div class="flex items-center justify-center gap-2 text-sm text-slate-500 bg-slate-50 p-2 rounded">
-                    <span>รหัสภาษา:</span>
-                    <select id="encoding-select" class="border rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-brand">
-                        <option value="TIS-620" selected>Thai (TIS-620)</option>
-                        <option value="UTF-8">UTF-8</option>
+
+                <div class="mt-6 flex justify-center items-center gap-3">
+                    <span class="text-[10px] uppercase text-slate-600 tracking-wider">รหัสภาษา (Encoding)</span>
+                    <select id="encoding-select" class="bg-transparent text-chester-red text-xs font-mono focus:outline-none cursor-pointer border-b border-white/10 pb-1">
+                        <option value="TIS-620" class="bg-dark-900">TIS-620 (Thai Legacy)</option>
+                        <option value="UTF-8" class="bg-dark-900">UTF-8 (Standard)</option>
                     </select>
                 </div>
             </div>
-            
-            <!-- Demo Button -->
-            <button onclick="loadDemo()" class="mt-4 text-xs text-slate-400 underline">ลองใช้ข้อมูลตัวอย่าง</button>
         </div>
 
-        <!-- Dashboard Area -->
-        <div id="dashboard-screen" class="hidden space-y-6 pb-20">
+        <!-- Dashboard -->
+        <div id="dashboard-screen" class="hidden pb-24">
             
-            <!-- Tabs -->
-            <div class="flex overflow-x-auto gap-2 pb-2 sticky top-20 z-40 bg-[#f1f5f9]/95 backdrop-blur px-1 pt-2 -mx-1">
-                <button onclick="switchTab('overview', this)" class="whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold shadow-sm transition-all tab-active"><i class="fa-solid fa-chart-pie mr-1"></i> ภาพรวม</button>
-                <button onclick="switchTab('material', this)" class="whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold shadow-sm transition-all tab-inactive"><i class="fa-solid fa-calculator mr-1"></i> วัตถุดิบ</button>
-                <button onclick="switchTab('packaging', this)" class="whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold shadow-sm transition-all tab-inactive"><i class="fa-solid fa-box-open mr-1"></i> บรรจุภัณฑ์</button>
-                <button onclick="switchTab('planning', this)" class="whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold shadow-sm transition-all tab-inactive"><i class="fa-solid fa-clock mr-1"></i> ตารางเตรียม</button>
-                <button onclick="switchTab('order', this)" class="whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold shadow-sm transition-all tab-inactive"><i class="fa-solid fa-truck-ramp-box mr-1"></i> แผนสั่งของ</button>
+            <!-- Navigation Dock -->
+            <div class="mb-10 flex justify-center">
+                <div class="glass-panel px-6 py-3 rounded-2xl flex gap-8 shadow-2xl overflow-x-auto">
+                    <button onclick="switchTab('overview', this)" class="nav-btn active whitespace-nowrap">ภาพรวม</button>
+                    <button onclick="switchTab('material', this)" class="nav-btn whitespace-nowrap">วัตถุดิบ</button>
+                    <button onclick="switchTab('packaging', this)" class="nav-btn whitespace-nowrap">บรรจุภัณฑ์</button>
+                    <button onclick="switchTab('planning', this)" class="nav-btn whitespace-nowrap">ตารางเตรียม</button>
+                    <button onclick="switchTab('order', this)" class="nav-btn whitespace-nowrap">คำนวณการสั่ง</button>
+                </div>
             </div>
 
             <!-- 1. Overview -->
-            <div id="view-overview" class="view-section space-y-4 animate-up">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500">
-                        <div class="text-xs text-slate-500 font-bold uppercase">ไก่สด BL (ชิ้น)</div>
-                        <div class="text-2xl font-bold text-slate-800" id="kpi-bl">0</div>
+            <div id="view-overview" class="view-section space-y-6 animate-fade-in">
+                <!-- KPI Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- KPI 1 -->
+                    <div class="glass-card p-6 rounded-2xl border-l-2 border-l-chester-red">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">เนื้อบีแอล</span>
+                        </div>
+                        <h3 class="font-display text-5xl font-bold text-white text-glow-red font-mono-num" id="kpi-bl">0</h3>
+                        <div class="mt-2 text-xs text-chester-red font-medium">ชิ้น (Pieces)</div>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500">
-                        <div class="text-xs text-slate-500 font-bold uppercase">ไก่ตัด 8 (ชิ้น)</div>
-                        <div class="text-2xl font-bold text-slate-800" id="kpi-cut8">0</div>
+
+                    <!-- KPI 2 -->
+                    <div class="glass-card p-6 rounded-2xl border-l-2 border-l-chester-yellow">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">ไก่ตัด 8</span>
+                        </div>
+                        <h3 class="font-display text-5xl font-bold text-white text-glow-yellow font-mono-num" id="kpi-cut8">0</h3>
+                        <div class="mt-2 text-xs text-chester-yellow font-medium">ชิ้น (Pieces)</div>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-emerald-500">
-                        <div class="text-xs text-slate-500 font-bold uppercase">Block (ชิ้น)</div>
-                        <div class="text-2xl font-bold text-slate-800" id="kpi-block">0</div>
+
+                    <!-- KPI 3 -->
+                    <div class="glass-card p-6 rounded-2xl border-l-2 border-l-emerald-500">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">BL Block</span>
+                        </div>
+                        <h3 class="font-display text-5xl font-bold text-white font-mono-num" id="kpi-block">0</h3>
+                        <div class="mt-2 text-xs text-emerald-500 font-medium">ชิ้น (Pieces)</div>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
-                        <div class="text-xs text-slate-500 font-bold uppercase">ยอดขายรวม (ที่)</div>
-                        <div class="text-2xl font-bold text-slate-800" id="kpi-sales">0</div>
+
+                    <!-- KPI 4 -->
+                    <div class="glass-card p-6 rounded-2xl border-l-2 border-l-blue-500">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">ยอดขายรวม</span>
+                        </div>
+                        <h3 class="font-display text-5xl font-bold text-white font-mono-num" id="kpi-sales">0</h3>
+                        <div class="mt-2 text-xs text-blue-500 font-medium">รายการ</div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="font-bold text-slate-700 mb-4 flex items-center"><i class="fa-solid fa-trophy mr-2 text-yellow-500"></i> 10 อันดับเมนูขายดี</h3>
-                        <div class="h-80 w-full"><canvas id="chart-top10"></canvas></div>
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-card p-6 rounded-2xl lg:col-span-2">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">ยอดขายรายชั่วโมง</h3>
+                        <div class="h-[320px] w-full"><canvas id="chart-hourly"></canvas></div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="font-bold text-slate-700 mb-4 flex items-center"><i class="fa-solid fa-chart-line mr-2 text-blue-500"></i> ยอดขายรายชั่วโมง</h3>
-                        <div class="h-80 w-full"><canvas id="chart-hourly"></canvas></div>
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">10 อันดับเมนูขายดี</h3>
+                        <div class="h-[320px] w-full"><canvas id="chart-top10"></canvas></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Material Breakdown -->
-            <div id="view-material" class="view-section hidden space-y-4 animate-up">
-                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
-                        <h3 class="font-bold text-orange-600 mb-2 border-b pb-2">ไก่ BL สด</h3>
-                        <div class="overflow-y-auto max-h-96"><table class="w-full text-sm"><tbody id="table-bl"></tbody></table></div>
+            <!-- 2. Materials -->
+            <div id="view-material" class="view-section hidden space-y-6 animate-fade-in">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Col 1 -->
+                    <div class="glass-card rounded-2xl flex flex-col h-[650px] border-t-2 border-t-chester-red">
+                        <div class="p-5 border-b border-white/5 bg-white/5 backdrop-blur-md sticky top-0 z-10">
+                            <h3 class="font-display text-xl font-bold text-white">เนื้อบีแอล</h3>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider mt-1">รายละเอียดการใช้</p>
+                        </div>
+                        <div class="flex-grow overflow-y-auto p-2">
+                            <table class="w-full text-sm text-left"><tbody id="table-bl"></tbody></table>
+                        </div>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-yellow-100">
-                        <h3 class="font-bold text-yellow-600 mb-2 border-b pb-2">ไก่ตัด 8</h3>
-                        <div class="overflow-y-auto max-h-96"><table class="w-full text-sm"><tbody id="table-cut8"></tbody></table></div>
+                    <!-- Col 2 -->
+                    <div class="glass-card rounded-2xl flex flex-col h-[650px] border-t-2 border-t-chester-yellow">
+                        <div class="p-5 border-b border-white/5 bg-white/5 backdrop-blur-md sticky top-0 z-10">
+                            <h3 class="font-display text-xl font-bold text-white">ไก่ตัด 8</h3>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider mt-1">รายละเอียดการใช้</p>
+                        </div>
+                        <div class="flex-grow overflow-y-auto p-2">
+                            <table class="w-full text-sm text-left"><tbody id="table-cut8"></tbody></table>
+                        </div>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100">
-                        <h3 class="font-bold text-emerald-600 mb-2 border-b pb-2">BL Block</h3>
-                        <div class="overflow-y-auto max-h-96"><table class="w-full text-sm"><tbody id="table-block"></tbody></table></div>
+                    <!-- Col 3 -->
+                    <div class="glass-card rounded-2xl flex flex-col h-[650px] border-t-2 border-t-emerald-500">
+                        <div class="p-5 border-b border-white/5 bg-white/5 backdrop-blur-md sticky top-0 z-10">
+                            <h3 class="font-display text-xl font-bold text-white">BL Block</h3>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider mt-1">รายละเอียดการใช้</p>
+                        </div>
+                        <div class="flex-grow overflow-y-auto p-2">
+                            <table class="w-full text-sm text-left"><tbody id="table-block"></tbody></table>
+                        </div>
                     </div>
-                 </div>
+                </div>
             </div>
 
             <!-- 3. Packaging -->
-            <div id="view-packaging" class="view-section hidden space-y-6 animate-up">
-                <!-- Controller -->
-                <div class="bg-slate-800 rounded-xl p-6 text-white shadow-lg">
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div>
-                            <h3 class="font-bold text-lg"><i class="fa-solid fa-sliders mr-2"></i>ปรับสัดส่วนลูกค้าหน้าร้าน</h3>
-                            <p class="text-xs text-slate-400">คำนวณจาก Delivery (100%) + หน้าร้าน (ตาม % ที่เลือก)</p>
+            <div id="view-packaging" class="view-section hidden space-y-8 animate-fade-in">
+                <!-- Config Panel -->
+                <div class="glass-panel p-8 rounded-2xl border border-white/10">
+                    <div class="flex flex-col md:flex-row gap-12 items-center">
+                        <div class="md:w-1/3">
+                            <h3 class="text-2xl font-display font-bold text-white mb-2">จำลองสถานการณ์</h3>
+                            <p class="text-slate-400 text-sm font-light leading-relaxed">ปรับสัดส่วนลูกค้าหน้าร้าน/กลับบ้าน เพื่อคำนวณแพ็กเกจจิ้ง</p>
                         </div>
-                        <div class="w-full md:w-1/2 bg-slate-700 p-4 rounded-lg">
-                            <div class="flex justify-between text-sm mb-2">
-                                <span>สัดส่วนซื้อกลับบ้าน:</span>
-                                <span class="font-bold text-brand text-lg" id="disp-percent">30%</span>
+                        <div class="md:w-2/3 w-full space-y-6">
+                            <div class="bg-black/40 p-5 rounded-xl border border-white/5">
+                                <div class="flex justify-between text-white mb-4">
+                                    <span class="text-xs uppercase tracking-widest text-slate-500">สัดส่วนกลับบ้าน (Take Away)</span>
+                                    <span class="text-2xl font-bold text-chester-red font-mono-num" id="disp-percent">30%</span>
+                                </div>
+                                <input type="range" id="slider-percent" min="0" max="100" value="30" class="w-full" oninput="updatePackaging(this.value)">
                             </div>
-                            <input type="range" id="slider-percent" min="0" max="100" value="30" class="w-full" oninput="updatePackaging(this.value)">
-                            <div class="flex justify-between text-[10px] text-slate-400 mt-1"><span>0% (ทานร้านหมด)</span><span>100% (ซื้อกลับหมด)</span></div>
+                            
+                            <div class="flex items-center justify-between bg-black/40 p-4 rounded-xl border border-white/5">
+                                <span class="text-slate-400 text-sm">ทานเหลือ (ห่อกลับ)</span>
+                                <div class="flex items-center gap-3">
+                                    <input type="number" id="input-leftover" value="15" class="bg-dark-900 border border-white/10 text-white text-center w-20 py-2 rounded-lg focus:border-chester-red focus:outline-none transition-colors font-mono font-bold" onchange="updatePackaging()">
+                                    <span class="text-xs text-slate-600 uppercase tracking-wider">คน/วัน</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Leftover Input -->
-                    <div class="mt-4 flex items-center gap-3 bg-slate-900/50 p-3 rounded border border-slate-600">
-                         <span class="text-sm">ลูกค้าทานเหลือ (ห่อกลับ):</span>
-                         <input type="number" id="input-leftover" value="15" class="w-16 bg-white text-slate-800 rounded px-2 py-1 text-center" onchange="updatePackaging()">
-                         <span class="text-xs text-slate-400">คน/วัน (เพิ่มยอดกล่อง/ช้อน)</span>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card p-6 rounded-2xl text-center">
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">กล่องข้าว 2 ช่อง</div>
+                        <div class="text-5xl font-display font-bold text-white mb-3 font-mono-num" id="pkg-rice">0</div>
+                        <div class="flex justify-center gap-6 text-xs text-slate-500 font-mono">
+                            <span>ส่ง: <b id="pkg-rice-del" class="text-slate-300">0</b></span>
+                            <span>ร้าน: <b id="pkg-rice-wi" class="text-slate-300">0</b></span>
+                        </div>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl text-center">
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">ช้อน-ส้อม (คู่)</div>
+                        <div class="text-5xl font-display font-bold text-white mb-3 font-mono-num" id="pkg-spoon">0</div>
+                        <div class="flex justify-center gap-6 text-xs text-slate-500 font-mono">
+                            <span>ส่ง: <b id="pkg-spoon-del" class="text-slate-300">0</b></span>
+                            <span>ร้าน: <b id="pkg-spoon-wi" class="text-slate-300">0</b></span>
+                        </div>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl text-center">
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">มีด-ส้อม (คู่)</div>
+                        <div class="text-5xl font-display font-bold text-white mb-3 font-mono-num" id="pkg-knife">0</div>
+                        <div class="flex justify-center gap-6 text-xs text-slate-500 font-mono">
+                            <span>ส่ง: <b id="pkg-knife-del" class="text-slate-300">0</b></span>
+                            <span>ร้าน: <b id="pkg-knife-wi" class="text-slate-300">0</b></span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-6 rounded-xl shadow-sm text-center border-b-4 border-blue-500">
-                        <div class="text-sm text-slate-500 font-bold">กล่องข้าว 2 ช่อง</div>
-                        <div class="text-4xl font-bold text-blue-600 my-2" id="pkg-rice">0</div>
-                        <div class="text-xs text-slate-400">Delivery: <b id="pkg-rice-del">0</b> | Walk: <b id="pkg-rice-wi">0</b></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm text-center border-b-4 border-gray-500">
-                        <div class="text-sm text-slate-500 font-bold">ช้อน-ส้อม (คู่)</div>
-                        <div class="text-4xl font-bold text-gray-700 my-2" id="pkg-spoon">0</div>
-                        <div class="text-xs text-slate-400">Delivery: <b id="pkg-spoon-del">0</b> | Walk: <b id="pkg-spoon-wi">0</b></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm text-center border-b-4 border-orange-500">
-                        <div class="text-sm text-slate-500 font-bold">มีด-ส้อม (คู่)</div>
-                        <div class="text-4xl font-bold text-orange-600 my-2" id="pkg-knife">0</div>
-                        <div class="text-xs text-slate-400">Delivery: <b id="pkg-knife-del">0</b> | Walk: <b id="pkg-knife-wi">0</b></div>
-                    </div>
-                </div>
-
-                <!-- Plan Order Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-4 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
-                        <h3 class="font-bold text-blue-800"><i class="fa-solid fa-cart-shopping mr-2"></i>แผนสั่งบรรจุภัณฑ์ (Safety Stock 15%)</h3>
+                <!-- Table -->
+                <div class="glass-card rounded-2xl overflow-hidden">
+                    <div class="p-5 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                        <h4 class="font-bold text-white text-sm uppercase tracking-wide">แผนสั่งบรรจุภัณฑ์</h4>
+                        <span class="text-[10px] font-bold bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-500/20">เผื่อ STOCK +15%</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="bg-slate-50 text-slate-600">
+                        <table class="w-full text-sm text-left text-slate-400">
+                            <thead class="text-xs text-slate-500 uppercase bg-black/20">
                                 <tr>
-                                    <th class="px-6 py-3">รายการ</th>
-                                    <th class="px-6 py-3 text-right">ยอดใช้ประเมิน</th>
-                                    <th class="px-6 py-3 text-right text-green-600">ควรสั่งซื้อ (Stock)</th>
+                                    <th class="px-8 py-4 font-normal">รายการ</th>
+                                    <th class="px-8 py-4 text-right font-normal">ยอดใช้จริง</th>
+                                    <th class="px-8 py-4 text-right text-chester-red font-bold">ยอดสั่งซื้อ</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y">
-                                <tr>
-                                    <td class="px-6 py-3 font-medium">กล่องข้าว 2 ช่อง</td>
-                                    <td class="px-6 py-3 text-right" id="plan-use-rice">0</td>
-                                    <td class="px-6 py-3 text-right font-bold text-lg text-green-600" id="plan-order-rice">0</td>
+                            <tbody class="divide-y divide-white/5 font-mono">
+                                <tr class="hover:bg-white/5 transition-colors">
+                                    <td class="px-8 py-4 font-sans text-white">กล่องข้าว 2 ช่อง</td>
+                                    <td class="px-8 py-4 text-right" id="plan-use-rice">0</td>
+                                    <td class="px-8 py-4 text-right text-xl text-chester-red font-bold" id="plan-order-rice">0</td>
                                 </tr>
-                                <tr>
-                                    <td class="px-6 py-3 font-medium">ช้อน-ส้อม (สำหรับข้าว)</td>
-                                    <td class="px-6 py-3 text-right" id="plan-use-spoon">0</td>
-                                    <td class="px-6 py-3 text-right font-bold text-lg text-green-600" id="plan-order-spoon">0</td>
+                                <tr class="hover:bg-white/5 transition-colors">
+                                    <td class="px-8 py-4 font-sans text-white">ช้อน-ส้อม (ข้าว)</td>
+                                    <td class="px-8 py-4 text-right" id="plan-use-spoon">0</td>
+                                    <td class="px-8 py-4 text-right text-xl text-chester-red font-bold" id="plan-order-spoon">0</td>
                                 </tr>
-                                <tr>
-                                    <td class="px-6 py-3 font-medium">มีด-ส้อม (สำหรับไก่/เกี๊ยว)</td>
-                                    <td class="px-6 py-3 text-right" id="plan-use-knife">0</td>
-                                    <td class="px-6 py-3 text-right font-bold text-lg text-green-600" id="plan-order-knife">0</td>
+                                <tr class="hover:bg-white/5 transition-colors">
+                                    <td class="px-8 py-4 font-sans text-white">มีด-ส้อม (ไก่)</td>
+                                    <td class="px-8 py-4 text-right" id="plan-use-knife">0</td>
+                                    <td class="px-8 py-4 text-right text-xl text-chester-red font-bold" id="plan-order-knife">0</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-
             </div>
 
-            <!-- 4. Planning (Prep Schedule) -->
-            <div id="view-planning" class="view-section hidden space-y-6 animate-up">
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h3 class="font-bold text-slate-700 mb-4 flex items-center"><i class="fa-solid fa-clock mr-2 text-brand"></i> ปริมาณวัตถุดิบที่ต้องใช้รายชั่วโมง</h3>
-                    <div class="h-80 w-full"><canvas id="chart-prep"></canvas></div>
+            <!-- 4. Timeline -->
+            <div id="view-planning" class="view-section hidden space-y-6 animate-fade-in">
+                 <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">กราฟการใช้วัตถุดิบ (รายชั่วโมง)</h3>
+                    <div class="h-[350px] w-full"><canvas id="chart-prep"></canvas></div>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-4 bg-slate-50 border-b border-slate-100 font-bold text-slate-700">ตารางเตรียมของรายชั่วโมง (ชิ้น)</div>
+                <div class="glass-card rounded-2xl overflow-hidden">
+                    <div class="p-5 border-b border-white/5 bg-white/5">
+                        <h4 class="font-bold text-white text-sm uppercase tracking-wide">ตารางเตรียมของรายชั่วโมง</h4>
+                    </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="bg-slate-100 text-slate-600">
+                        <table class="w-full text-sm text-left text-slate-400">
+                            <thead class="text-xs text-slate-500 uppercase bg-black/20">
                                 <tr>
-                                    <th class="px-6 py-3">เวลา</th>
-                                    <th class="px-6 py-3 text-orange-600">BL สด</th>
-                                    <th class="px-6 py-3 text-yellow-600">ไก่ตัด 8</th>
-                                    <th class="px-6 py-3 text-green-600">Block</th>
-                                    <th class="px-6 py-3 text-right font-bold">รวม</th>
+                                    <th class="px-6 py-4 font-normal">เวลา</th>
+                                    <th class="px-6 py-4 text-chester-red font-normal">เนื้อบีแอล</th>
+                                    <th class="px-6 py-4 text-chester-yellow font-normal">ไก่ตัด 8</th>
+                                    <th class="px-6 py-4 text-emerald-500 font-normal">BL Block</th>
+                                    <th class="px-6 py-4 text-right text-white font-bold">รวม</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-prep" class="divide-y"></tbody>
+                            <tbody id="table-prep" class="divide-y divide-white/5 font-mono"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- 5. Order Suggestion (Food) -->
-            <div id="view-order" class="view-section hidden space-y-6 animate-up">
-                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-2">📦 แผนการสั่งวัตถุดิบไก่</h2>
-                    <p class="text-slate-500 mb-8">คำนวณจากยอดขายจริงทั้งหมด + เผื่อ Safety Stock 10%</p>
+            <!-- 5. Orders (New Detailed Design) -->
+            <div id="view-order" class="view-section hidden animate-fade-in">
+                <div class="glass-card p-12 rounded-3xl border border-chester-red/20 text-center relative overflow-hidden">
+                    <!-- Glow effect behind -->
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-chester-red/5 blur-[100px] -z-10"></div>
+
+                    <!-- Updated Title -->
+                    <h2 class="text-4xl font-display font-bold text-white mb-2">คำนวณการสั่งวัตถุดิบ</h2>
+                    <p class="text-slate-400 mb-12 text-sm tracking-wide">คำนวณจากยอดขายจริง + เผื่อ Stock 10%</p>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="p-6 rounded-xl border-2 border-orange-100 bg-orange-50/50">
-                            <h4 class="text-slate-600 font-bold mb-2">ไก่ BL สด</h4>
-                            <div class="text-4xl font-bold text-orange-600" id="suggest-bl">0</div>
-                            <div class="text-xs text-orange-400 mt-2">ชิ้น</div>
-                        </div>
-                        <div class="p-6 rounded-xl border-2 border-yellow-100 bg-yellow-50/50">
-                            <h4 class="text-slate-600 font-bold mb-2">ไก่ตัด 8</h4>
-                            <div class="text-4xl font-bold text-yellow-600" id="suggest-cut8">0</div>
-                            <div class="text-xs text-yellow-400 mt-2">ชิ้น</div>
-                        </div>
-                        <div class="p-6 rounded-xl border-2 border-emerald-100 bg-emerald-50/50">
-                            <h4 class="text-slate-600 font-bold mb-2">ไก่ Block</h4>
-                            <div class="text-4xl font-bold text-emerald-600" id="suggest-block">0</div>
-                            <div class="text-xs text-emerald-400 mt-2">ชิ้น</div>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                         <!-- Card 1 -->
+                         <div class="bg-black/40 p-8 rounded-2xl border border-white/5 hover:border-chester-red transition-all duration-300 group text-left">
+                             <h4 class="text-slate-400 font-bold uppercase tracking-widest text-xs mb-6 group-hover:text-chester-red transition-colors">เนื้อบีแอล</h4>
+                             
+                             <div class="flex justify-between items-center text-sm text-slate-500 mb-3">
+                                 <span>ใช้จริง:</span>
+                                 <span class="text-white font-mono-num" id="usage-bl">0</span>
+                             </div>
+                             <div class="flex justify-between items-center text-sm text-slate-500 mb-6 pb-4 border-b border-white/10">
+                                 <span>เผื่อ 10%:</span>
+                                 <span class="text-white font-mono-num" id="buffer-bl">0</span>
+                             </div>
+                             
+                             <div class="text-right">
+                                 <span class="text-[10px] text-slate-600 uppercase tracking-wider block mb-1">ยอดรวมสั่งซื้อ</span>
+                                 <div class="text-5xl font-display font-bold text-white text-glow-red font-mono-num" id="suggest-bl">0</div>
+                                 <span class="text-slate-500 text-[10px] uppercase tracking-wider mt-1 block">ชิ้น</span>
+                             </div>
+                         </div>
+
+                         <!-- Card 2 -->
+                         <div class="bg-black/40 p-8 rounded-2xl border border-white/5 hover:border-chester-yellow transition-all duration-300 group text-left">
+                             <h4 class="text-slate-400 font-bold uppercase tracking-widest text-xs mb-6 group-hover:text-chester-yellow transition-colors">ไก่ตัด 8</h4>
+                             
+                             <div class="flex justify-between items-center text-sm text-slate-500 mb-3">
+                                 <span>ใช้จริง:</span>
+                                 <span class="text-white font-mono-num" id="usage-cut8">0</span>
+                             </div>
+                             <div class="flex justify-between items-center text-sm text-slate-500 mb-6 pb-4 border-b border-white/10">
+                                 <span>เผื่อ 10%:</span>
+                                 <span class="text-white font-mono-num" id="buffer-cut8">0</span>
+                             </div>
+                             
+                             <div class="text-right">
+                                 <span class="text-[10px] text-slate-600 uppercase tracking-wider block mb-1">ยอดรวมสั่งซื้อ</span>
+                                 <div class="text-5xl font-display font-bold text-white text-glow-yellow font-mono-num" id="suggest-cut8">0</div>
+                                 <span class="text-slate-500 text-[10px] uppercase tracking-wider mt-1 block">ชิ้น</span>
+                             </div>
+                         </div>
+
+                         <!-- Card 3 -->
+                         <div class="bg-black/40 p-8 rounded-2xl border border-white/5 hover:border-emerald-500 transition-all duration-300 group text-left">
+                             <h4 class="text-slate-400 font-bold uppercase tracking-widest text-xs mb-6 group-hover:text-emerald-500 transition-colors">BL Block</h4>
+                             
+                             <div class="flex justify-between items-center text-sm text-slate-500 mb-3">
+                                 <span>ใช้จริง:</span>
+                                 <span class="text-white font-mono-num" id="usage-block">0</span>
+                             </div>
+                             <div class="flex justify-between items-center text-sm text-slate-500 mb-6 pb-4 border-b border-white/10">
+                                 <span>เผื่อ 10%:</span>
+                                 <span class="text-white font-mono-num" id="buffer-block">0</span>
+                             </div>
+                             
+                             <div class="text-right">
+                                 <span class="text-[10px] text-slate-600 uppercase tracking-wider block mb-1">ยอดรวมสั่งซื้อ</span>
+                                 <div class="text-5xl font-display font-bold text-white font-mono-num" id="suggest-block">0</div>
+                                 <span class="text-slate-500 text-[10px] uppercase tracking-wider mt-1 block">ชิ้น</span>
+                             </div>
+                         </div>
                     </div>
                 </div>
             </div>
 
         </div>
+        
+        <!-- Toast Container -->
+        <div id="toast-container" class="fixed bottom-8 right-8 z-50 flex flex-col gap-3"></div>
     </main>
 
     <script>
-        // --- Core Data ---
+        // --- Config ---
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+        Chart.defaults.font.family = 'Kanit';
+
         let cleanRows = [];
         let hourlyPrepData = {};
         let chartHourly = null;
@@ -281,63 +483,60 @@
         let packagingData = { del:{r:0,s:0,k:0}, wi:{r:0,s:0,k:0} };
         let daysInFile = 1;
 
-        // --- Configs ---
         const TARGETS = {
             BL: ["Signature 3","C2","Signature 2","Signature+โค้ก","A3","B1","B2","B3","B5","C1","C3","Signature","ข้าวไก่เผ็ด","ข้าวอบไก่ย่าง","ไก่กรอบซอสน้ำปลา","ข้าวไก่กรอบน้ำปลา","ยำไทย","ข้าวไก่ย่างน้ำตก","ข้าวไก่เผ็ดซอสมันปู","149","โทสต์แร็พไก่เผ็ด"],
             CUT8: ["PB3","A1","A2","5 ชิ้น","สูตรเผ็ด","49 บ."],
-            // Added 'cat' to delivery keys
             DELIVERY_KEYS: ["cat", "catering", "จัดเลี้ยง", "กล่อง", "box", "กลับบ้าน", "take away", "delivery", "ห่อ", "partner", "พาร์ทเนอร์", "grab", "lineman", "foodpanda", "shopee", "robinhood", "app", "จัดส่ง", "แอป", "แอพ"]
         };
 
-        // --- Helpers ---
         function clean(val) {
             if (val === undefined || val === null) return "";
-            // Super Cleaner: Remove ' at start, quotes, and trim
             return String(val).replace(/^['"]/, "").replace(/['"]$/, "").trim();
         }
         function cleanNum(val) {
-            // Remove ' and , then parse
             let s = clean(val).replace(/,/g, "");
             let n = parseFloat(s);
             return isNaN(n) ? 0 : n;
         }
+        
+        function showToast(message, type='info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let borderColor = type === 'error' ? 'border-red-500 bg-red-50' : 'border-chester-red bg-white';
+            let iconColor = type === 'error' ? 'text-red-500' : 'text-chester-red';
+            toast.className = `glass-panel px-5 py-3 rounded-lg border-l-4 ${borderColor} text-sm text-slate-700 shadow-xl toast-enter flex items-center gap-3`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info ${iconColor}"></i><span class="font-medium">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => container.removeChild(toast), 300); }, 3000);
+        }
 
-        // --- File Handling ---
         function handleFile(file) {
             if(!file) return;
             const encoding = document.getElementById('encoding-select').value;
             Papa.parse(file, {
-                header: false,
-                skipEmptyLines: true,
-                encoding: encoding,
+                header: false, skipEmptyLines: true, encoding: encoding,
                 complete: function(results) {
-                    if (results.data && results.data.length > 1) {
-                        processData(results.data);
-                    } else {
-                        alert("ไฟล์ไม่มีข้อมูล");
-                    }
-                }
+                    if (results.data && results.data.length > 1) { processData(results.data); showToast("นำเข้าข้อมูลสำเร็จ"); } 
+                    else { showToast("รูปแบบไฟล์ไม่ถูกต้อง", "error"); }
+                },
+                error: function() { showToast("อ่านไฟล์ล้มเหลว", "error"); }
             });
         }
 
         function processData(rows) {
-            // 1. Find Header
             let headerIdx = -1;
             for(let i=0; i<Math.min(50, rows.length); i++) {
                 let rowStr = JSON.stringify(rows[i]).toLowerCase();
                 if(rowStr.includes("product") && rowStr.includes("name")) { headerIdx = i; break; }
             }
-            if(headerIdx === -1) { alert("หาหัวตารางไม่เจอ"); return; }
+            if(headerIdx === -1) { showToast("ไม่พบหัวตาราง", "error"); return; }
 
-            // 2. Map Cols
             const headers = rows[headerIdx].map(h => clean(h).toLowerCase());
             const idxName = headers.findIndex(h => h.includes("product") && h.includes("name"));
             const idxTotal = headers.findIndex(h => h === "total" || h === "ยอดรวม");
             const idxCode = headers.findIndex(h => h.includes("pma") && h.includes("code"));
-            const idxDesc = headers.findIndex(h => h.includes("pma") && h.includes("desc"));
             const idxDate = headers.findIndex(h => h.includes("date") || h.includes("วันที่"));
 
-            // 3. Time Cols
             let timeCols = [];
             headers.forEach((h, i) => {
                 if(h.includes(":") && /\d/.test(h) && !h.includes("date")) {
@@ -351,7 +550,6 @@
                 hourlySales[t.label] = 0;
             });
 
-            // 4. Process
             cleanRows = [];
             let totalSales = 0;
             let sumBL=0, sumCut8=0, sumBlock=0;
@@ -362,22 +560,16 @@
             for(let i = headerIdx + 1; i < rows.length; i++) {
                 let row = rows[i];
                 if(row.length <= idxName) continue;
-
                 let name = clean(row[idxName]);
                 let qty = cleanNum(row[idxTotal]);
                 let code = idxCode > -1 ? clean(row[idxCode]) : "";
-                let desc = idxDesc > -1 ? clean(row[idxDesc]) : "";
-
                 if(!name || qty <= 0) continue;
 
                 if(idxDate > -1) uniqueDates.add(clean(row[idxDate]));
                 totalSales += qty;
-
-                // Product Summary
                 if(!productSummary[name]) productSummary[name] = 0;
                 productSummary[name] += qty;
 
-                // Materials
                 let mulBL = 0, mulCut8 = 0, mulBlock = 0;
                 let nameNoSpace = name.replace(/\s/g, "");
 
@@ -406,7 +598,6 @@
                 sumCut8 += (qty * mulCut8);
                 sumBlock += (qty * mulBlock);
 
-                // Hourly
                 timeCols.forEach(t => {
                     let hQty = cleanNum(row[t.idx]);
                     if(hQty > 0) {
@@ -418,61 +609,39 @@
                     }
                 });
 
-                // Packaging Logic
                 let nameLower = name.toLowerCase();
-                let descLower = desc.toLowerCase();
-                
-                // Detection: Code 5237 OR Keywords OR 'cat' prefix
-                let isDel = (code === '5237') || 
-                            TARGETS.DELIVERY_KEYS.some(k => nameLower.includes(k) || descLower.includes(k));
-
+                let isDel = (code === '5237') || TARGETS.DELIVERY_KEYS.some(k => nameLower.includes(k));
                 let riceBox = 0, spoon = 0, knife = 0;
-                
-                if(name.includes("ข้าว")) {
-                    let setSize = 1;
-                    if(name.includes("2 ที่") || name.includes("ชุดคู่")) setSize = 2;
-                    if(name.includes("3 ที่")) setSize = 3;
-                    riceBox = qty * setSize;
-                    spoon = qty * setSize;
-                } else if(name.includes("ไก่ย่าง")) {
-                    let pcs = mulBL + mulCut8; 
-                    if(pcs === 0 && name.includes("ชิ้น")) {
-                         let m = name.match(/(\d+)/); if(m) pcs = parseInt(m[1]);
-                    }
-                    let pairs = (pcs > 4) ? 2 : (pcs > 0 ? 1 : 0);
-                    knife = qty * pairs;
-                } else if(name.includes("เกี๊ยวซ่า")) {
-                    knife = qty;
-                }
+                if(name.includes("ข้าว")) { let setSize = 1; if(name.includes("2 ที่") || name.includes("ชุดคู่")) setSize = 2; if(name.includes("3 ที่")) setSize = 3; riceBox = qty * setSize; spoon = qty * setSize; } 
+                else if(name.includes("ไก่ย่าง")) { let pcs = mulBL + mulCut8; if(pcs === 0 && name.includes("ชิ้น")) { let m = name.match(/(\d+)/); if(m) pcs = parseInt(m[1]); } let pairs = (pcs > 4) ? 2 : (pcs > 0 ? 1 : 0); knife = qty * pairs; } 
+                else if(name.includes("เกี๊ยวซ่า")) { knife = qty; }
 
-                // Bucket Data
-                if(isDel) {
-                    packagingData.del.r += riceBox;
-                    packagingData.del.s += spoon;
-                    packagingData.del.k += knife;
-                } else {
-                    packagingData.wi.r += riceBox;
-                    packagingData.wi.s += spoon;
-                    packagingData.wi.k += knife;
-                }
+                if(isDel) { packagingData.del.r += riceBox; packagingData.del.s += spoon; packagingData.del.k += knife; } 
+                else { packagingData.wi.r += riceBox; packagingData.wi.s += spoon; packagingData.wi.k += knife; }
 
                 cleanRows.push({ name, qty, mulBL, mulCut8, mulBlock });
             }
 
             daysInFile = uniqueDates.size || 1;
-
-            // Update UI
             document.getElementById('upload-screen').classList.add('hidden');
             document.getElementById('dashboard-screen').classList.remove('hidden');
-            document.getElementById('dashboard-screen').classList.add('animate-up');
-
+            
             document.getElementById('kpi-bl').innerText = sumBL.toLocaleString();
             document.getElementById('kpi-cut8').innerText = sumCut8.toLocaleString();
             document.getElementById('kpi-block').innerText = sumBlock.toLocaleString();
             document.getElementById('kpi-sales').innerText = totalSales.toLocaleString();
 
+            // Populate Detailed Order
+            document.getElementById('usage-bl').innerText = sumBL.toLocaleString();
+            document.getElementById('buffer-bl').innerText = Math.ceil(sumBL * 0.1).toLocaleString();
             document.getElementById('suggest-bl').innerText = Math.ceil(sumBL * 1.1).toLocaleString();
+
+            document.getElementById('usage-cut8').innerText = sumCut8.toLocaleString();
+            document.getElementById('buffer-cut8').innerText = Math.ceil(sumCut8 * 0.1).toLocaleString();
             document.getElementById('suggest-cut8').innerText = Math.ceil(sumCut8 * 1.1).toLocaleString();
+
+            document.getElementById('usage-block').innerText = sumBlock.toLocaleString();
+            document.getElementById('buffer-block').innerText = Math.ceil(sumBlock * 0.1).toLocaleString();
             document.getElementById('suggest-block').innerText = Math.ceil(sumBlock * 1.1).toLocaleString();
 
             renderMaterialsTable();
@@ -487,15 +656,12 @@
             
             let ratio = percent / 100;
             let leftovers = parseInt(document.getElementById('input-leftover').value) || 0;
-            // Leftovers: assume 1 person = 1 box + 1 spoon set
             let totalLeftovers = leftovers * daysInFile; 
 
-            // Calculate Totals
             let useRice = packagingData.del.r + Math.ceil(packagingData.wi.r * ratio) + totalLeftovers;
             let useSpoon = packagingData.del.s + Math.ceil(packagingData.wi.s * ratio) + totalLeftovers;
             let useKnife = packagingData.del.k + Math.ceil(packagingData.wi.k * ratio);
 
-            // Display Usage
             document.getElementById('pkg-rice').innerText = useRice.toLocaleString();
             document.getElementById('pkg-rice-del').innerText = packagingData.del.r.toLocaleString();
             document.getElementById('pkg-rice-wi').innerText = Math.ceil(packagingData.wi.r * ratio).toLocaleString();
@@ -508,30 +674,27 @@
             document.getElementById('pkg-knife-del').innerText = packagingData.del.k.toLocaleString();
             document.getElementById('pkg-knife-wi').innerText = Math.ceil(packagingData.wi.k * ratio).toLocaleString();
 
-            // Update Order Plan (Safety Stock 15%)
             let safeRice = Math.ceil(useRice * 1.15);
             let safeSpoon = Math.ceil(useSpoon * 1.15);
             let safeKnife = Math.ceil(useKnife * 1.15);
 
             document.getElementById('plan-use-rice').innerText = useRice.toLocaleString();
             document.getElementById('plan-order-rice').innerText = safeRice.toLocaleString();
-
             document.getElementById('plan-use-spoon').innerText = useSpoon.toLocaleString();
             document.getElementById('plan-order-spoon').innerText = safeSpoon.toLocaleString();
-
             document.getElementById('plan-use-knife').innerText = useKnife.toLocaleString();
             document.getElementById('plan-order-knife').innerText = safeKnife.toLocaleString();
         }
 
         function renderMaterialsTable() {
             const blList = cleanRows.filter(r => r.mulBL > 0).sort((a,b) => (b.qty*b.mulBL) - (a.qty*a.mulBL));
-            document.getElementById('table-bl').innerHTML = blList.slice(0,50).map(r => `<tr class="border-b hover:bg-orange-50"><td class="py-2 pl-2">${r.name}</td><td class="py-2 text-right pr-2">${(r.qty*r.mulBL).toLocaleString()}</td></tr>`).join('');
+            document.getElementById('table-bl').innerHTML = blList.slice(0,50).map(r => `<tr><td class="py-3 px-2 text-slate-300 border-b border-white/5 font-light">${r.name.replace(' 130-150', '')}</td><td class="py-3 px-2 text-right text-chester-red font-bold border-b border-white/5 font-mono-num">${(r.qty*r.mulBL).toLocaleString()}</td></tr>`).join('');
             
             const c8List = cleanRows.filter(r => r.mulCut8 > 0).sort((a,b) => (b.qty*b.mulCut8) - (a.qty*a.mulCut8));
-            document.getElementById('table-cut8').innerHTML = c8List.slice(0,50).map(r => `<tr class="border-b hover:bg-yellow-50"><td class="py-2 pl-2">${r.name}</td><td class="py-2 text-right pr-2">${(r.qty*r.mulCut8).toLocaleString()}</td></tr>`).join('');
+            document.getElementById('table-cut8').innerHTML = c8List.slice(0,50).map(r => `<tr><td class="py-3 px-2 text-slate-300 border-b border-white/5 font-light">${r.name}</td><td class="py-3 px-2 text-right text-chester-yellow font-bold border-b border-white/5 font-mono-num">${(r.qty*r.mulCut8).toLocaleString()}</td></tr>`).join('');
 
             const bkList = cleanRows.filter(r => r.mulBlock > 0).sort((a,b) => (b.qty*b.mulBlock) - (a.qty*a.mulBlock));
-            document.getElementById('table-block').innerHTML = bkList.slice(0,50).map(r => `<tr class="border-b hover:bg-emerald-50"><td class="py-2 pl-2">${r.name}</td><td class="py-2 text-right pr-2">${(r.qty*r.mulBlock).toLocaleString()}</td></tr>`).join('');
+            document.getElementById('table-block').innerHTML = bkList.slice(0,50).map(r => `<tr><td class="py-3 px-2 text-slate-300 border-b border-white/5 font-light">${r.name}</td><td class="py-3 px-2 text-right text-emerald-500 font-bold border-b border-white/5 font-mono-num">${(r.qty*r.mulBlock).toLocaleString()}</td></tr>`).join('');
         }
 
         function renderPrepTable(times) {
@@ -540,12 +703,12 @@
             times.forEach(t => {
                 let d = hourlyPrepData[t];
                 if(d.bl + d.cut8 + d.block > 0) {
-                    html += `<tr class="hover:bg-slate-50 border-b">
-                        <td class="px-6 py-2 font-bold text-slate-700">${t}</td>
-                        <td class="px-6 py-2 text-orange-600">${d.bl.toFixed(0)}</td>
-                        <td class="px-6 py-2 text-yellow-600">${d.cut8.toFixed(0)}</td>
-                        <td class="px-6 py-2 text-green-600">${d.block.toFixed(0)}</td>
-                        <td class="px-6 py-2 text-right font-bold">${(d.bl+d.cut8+d.block).toFixed(0)}</td>
+                    html += `<tr class="hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-4 font-bold text-slate-500 bg-white/5">${t}</td>
+                        <td class="px-6 py-4 text-chester-red font-medium font-mono-num">${d.bl.toFixed(0)}</td>
+                        <td class="px-6 py-4 text-chester-yellow font-medium font-mono-num">${d.cut8.toFixed(0)}</td>
+                        <td class="px-6 py-4 text-emerald-500 font-medium font-mono-num">${d.block.toFixed(0)}</td>
+                        <td class="px-6 py-4 text-right font-bold text-white font-mono-num">${(d.bl+d.cut8+d.block).toFixed(0)}</td>
                     </tr>`;
                 }
             });
@@ -554,27 +717,36 @@
 
         function renderCharts(labels, salesData, productSummary) {
             labels.sort();
-            
-            // 1. Hourly Chart
             const ctx1 = document.getElementById('chart-hourly').getContext('2d');
             if(chartHourly) chartHourly.destroy();
+            let gradient = ctx1.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(227, 30, 36, 0.4)'); gradient.addColorStop(1, 'rgba(227, 30, 36, 0.0)');
+
             chartHourly = new Chart(ctx1, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'ยอดขายรายชั่วโมง',
-                        data: labels.map(l => salesData[l]),
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.3
+                        label: 'Transactions', data: labels.map(l => salesData[l]),
+                        borderColor: '#E31E24', backgroundColor: gradient, fill: true, tension: 0.4,
+                        pointBackgroundColor: '#fff', pointBorderColor: '#E31E24', pointRadius: 3
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: {color:'#64748b'} }, y: { border: { dash: [4, 4] }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: {color:'#64748b'} } } }
             });
 
-            // 2. Prep Chart
+            const top10 = Object.entries(productSummary).sort((a,b) => b[1] - a[1]).slice(0, 10);
+            const ctx3 = document.getElementById('chart-top10').getContext('2d');
+            if(chartTop10) chartTop10.destroy();
+            chartTop10 = new Chart(ctx3, {
+                type: 'bar', indexAxis: 'y',
+                data: {
+                    labels: top10.map(i => i[0].length > 18 ? i[0].substr(0,18)+'...' : i[0]),
+                    datasets: [{ label: 'Sold', data: top10.map(i => i[1]), backgroundColor: '#E31E24', borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: {color:'#64748b'} }, y: { grid: { display: false }, ticks: {color:'#64748b'} } } }
+            });
+
             const ctx2 = document.getElementById('chart-prep').getContext('2d');
             if(chartPrep) chartPrep.destroy();
             chartPrep = new Chart(ctx2, {
@@ -582,57 +754,21 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'BL สด', data: labels.map(l => hourlyPrepData[l].bl), backgroundColor: '#ea580c' },
-                        { label: 'Cut 8', data: labels.map(l => hourlyPrepData[l].cut8), backgroundColor: '#eab308' },
-                        { label: 'Block', data: labels.map(l => hourlyPrepData[l].block), backgroundColor: '#10b981' }
+                        { label: 'เนื้อบีแอล', data: labels.map(l => hourlyPrepData[l].bl), backgroundColor: '#E31E24', borderRadius: 3 },
+                        { label: 'ไก่ตัด 8', data: labels.map(l => hourlyPrepData[l].cut8), backgroundColor: '#FFC72C', borderRadius: 3 },
+                        { label: 'BL Block', data: labels.map(l => hourlyPrepData[l].block), backgroundColor: '#10b981', borderRadius: 3 }
                     ]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    scales: { x: {stacked: true}, y: {stacked: true} }
-                }
-            });
-
-            // 3. Top 10 Chart (Horizontal)
-            const top10 = Object.entries(productSummary)
-                .sort((a,b) => b[1] - a[1])
-                .slice(0, 10);
-            
-            const ctx3 = document.getElementById('chart-top10').getContext('2d');
-            if(chartTop10) chartTop10.destroy();
-            chartTop10 = new Chart(ctx3, {
-                type: 'bar',
-                indexAxis: 'y', // Horizontal
-                data: {
-                    labels: top10.map(i => i[0].length > 15 ? i[0].substr(0,15)+'...' : i[0]),
-                    datasets: [{
-                        label: 'จำนวนที่ขาย',
-                        data: top10.map(i => i[1]),
-                        backgroundColor: '#e11d48'
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: {stacked: true, grid: {display: false}, ticks: {color:'#64748b'}}, y: {stacked: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: {color:'#64748b'}} }, plugins: { legend: { position: 'top', labels: { color: '#94a3b8' } } } }
             });
         }
 
         function switchTab(view, btn) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('view-' + view).classList.remove('hidden');
-            
-            document.querySelectorAll('button').forEach(b => {
-                if(b.classList.contains('tab-active')) {
-                    b.classList.remove('tab-active');
-                    b.classList.add('tab-inactive');
-                }
-            });
-            btn.classList.remove('tab-inactive');
-            btn.classList.add('tab-active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
-        
-        function loadDemo() { alert("กรุณาใช้ไฟล์จริงครับ"); }
     </script>
 </body>
 </html>
-
-
